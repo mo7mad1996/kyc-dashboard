@@ -89,12 +89,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </button>
           </div>
           <nav className="flex-1 px-4 py-4 space-y-2">
-            {navigation.map((item) => {
+            {navigation.map((item, n) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
               return (
                 <NavLink
-                  key={item.name}
+                  key={n}
                   to={item.href}
                   className={clsx(
                     "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -123,12 +123,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </span>
           </div>
           <nav className="flex-1 px-4 space-y-2">
-            {navigation.map((item) => {
+            {navigation.map((item, n) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
               return (
                 <NavLink
-                  key={item.name}
+                  key={n}
                   to={item.href}
                   className={clsx(
                     "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",

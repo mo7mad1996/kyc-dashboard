@@ -10,6 +10,7 @@ import {
   RefreshCw,
   XCircle,
   ArrowUpRight,
+  FileX,
   ArrowDownRight,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -190,6 +191,9 @@ export const TransactionsPage: React.FC = () => {
     }
   };
 
+  const [showDeleteModel, setShowDeleteModel] = useState(false);
+  const [id, setId] = useState("");
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -317,8 +321,8 @@ export const TransactionsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTransactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
+              {filteredTransactions.map((transaction, n) => (
+                <tr key={n} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
@@ -384,13 +388,30 @@ export const TransactionsPage: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => setSelectedTransaction(transaction)}
-                      className="text-blue-600 hover:text-blue-900 flex items-center space-x-1"
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span>View</span>
-                    </button>
+                    <div>
+                      <button
+                        onClick={() => setSelectedTransaction(transaction)}
+                        className="text-blue-600 hover:text-blue-900 flex items-center space-x-1"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span>View</span>
+                      </button>
+
+                      {user?.permissions.includes("delete") && (
+                        <button
+                          onClick={() => {
+                            setId(transaction._id);
+                            setShowDeleteModel(true);
+                          }}
+                          className="text-red-600 hover:text-red-700 flex items-center space-x-1 py-2"
+                        >
+                          <FileX className="h-4 w-4" />
+
+                          {showDeleteModel}
+                          <span>Delete</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -435,7 +456,7 @@ export const TransactionsPage: React.FC = () => {
                     Transaction ID
                   </label>
                   <p className="mt-1 text-sm text-gray-900">
-                    {selectedTransaction.id}
+                    {selectedTransaction._id}
                   </p>
                 </div>
                 <div>
@@ -538,7 +559,7 @@ export const TransactionsPage: React.FC = () => {
                         <button
                           onClick={() =>
                             updateTransactionStatus(
-                              selectedTransaction.id,
+                              selectedTransaction._id,
                               "processing"
                             )
                           }
@@ -549,7 +570,7 @@ export const TransactionsPage: React.FC = () => {
                         <button
                           onClick={() =>
                             updateTransactionStatus(
-                              selectedTransaction.id,
+                              selectedTransaction._id,
                               "cancelled"
                             )
                           }
@@ -563,7 +584,7 @@ export const TransactionsPage: React.FC = () => {
                       <button
                         onClick={() =>
                           updateTransactionStatus(
-                            selectedTransaction.id,
+                            selectedTransaction._id,
                             "completed"
                           )
                         }
@@ -577,7 +598,7 @@ export const TransactionsPage: React.FC = () => {
                         <button
                           onClick={() =>
                             updateTransactionStatus(
-                              selectedTransaction.id,
+                              selectedTransaction._id,
                               selectedTransaction.status,
                               "approved"
                             )
@@ -589,7 +610,7 @@ export const TransactionsPage: React.FC = () => {
                         <button
                           onClick={() =>
                             updateTransactionStatus(
-                              selectedTransaction.id,
+                              selectedTransaction._id,
                               selectedTransaction.status,
                               "rejected"
                             )
@@ -610,6 +631,19 @@ export const TransactionsPage: React.FC = () => {
       {/*  Add a new Transaction Detail Modal */}
       {showCreateModal && (
         <TransactionsModel {...{ loadTransactions, setShowCreateModal }} />
+      )}
+
+      {showDeleteModel && (
+        <DeleteTransactionsModel
+          {...{
+            setOpen: setShowDeleteModel,
+            action: async () => {
+              await transactionAPI.deleteTransaction(id);
+              await loadTransactions();
+              setShowDeleteModel(false);
+            },
+          }}
+        />
       )}
     </div>
   );
@@ -634,162 +668,196 @@ const TransactionsModel = ({ setShowCreateModal, loadTransactions }: any) => {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50  !mt-0">
-      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-lg bg-white">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Create New Transaction
-          </h3>
-          <button
-            onClick={() => setShowCreateModal(false)}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <XCircle className="h-6 w-6" />
-          </button>
+    <Modal>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-lg font-semibold text-gray-900">
+          Create New Transaction
+        </h3>
+        <button
+          onClick={() => setShowCreateModal(false)}
+          className="text-gray-400 hover:text-gray-600"
+        >
+          <XCircle className="h-6 w-6" />
+        </button>
+      </div>
+
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget as HTMLFormElement);
+          const data = {
+            // fromCurrency,
+            fromCurrency: formData.get("fromCurrency"),
+            // toCurrency,
+            toCurrency: formData.get("toCurrency"),
+            // amount,
+            amount: Number(formData.get("amount")),
+            // senderId,
+            senderId: user?.id,
+            // receiverId,
+            receiverId: formData.get("receiverId"),
+            // region
+            region: formData.get("region"),
+            // metadata,
+            metadata: {
+              senderName: user?.name,
+              receiverName:
+                users.find((u: any) => u._id == formData.get("receiverId"))
+                  ?.name || "",
+              purpose: formData.get("purpose"),
+              channel: "manual",
+            },
+          };
+          try {
+            await transactionAPI.createTransaction(data);
+            setShowCreateModal(false);
+            loadTransactions();
+          } catch (error) {
+            console.error(error);
+            alert("Error creating transaction");
+          }
+        }}
+        className="space-y-4"
+      >
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              From Currency
+            </label>
+
+            <select
+              name="fromCurrency"
+              required
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white border"
+            >
+              <option value="">select one</option>
+              <option value="USD">USD</option>
+              <option value="USDC">USDC</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              To Currency
+            </label>
+
+            <select
+              name="toCurrency"
+              required
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white border"
+            >
+              <option value="">select one</option>
+              <option value="USD">USD</option>
+              <option value="USDC">USDC</option>
+            </select>
+          </div>
         </div>
 
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget as HTMLFormElement);
-            const data = {
-              // fromCurrency,
-              fromCurrency: formData.get("fromCurrency"),
-              // toCurrency,
-              toCurrency: formData.get("toCurrency"),
-              // amount,
-              amount: Number(formData.get("amount")),
-              // senderId,
-              senderId: user?.id,
-              // receiverId,
-              receiverId: formData.get("receiverId"),
-              // region
-              region: formData.get("region"),
-              // metadata,
-              metadata: {
-                senderName: user?.name,
-                receiverName:
-                  users.find((u: any) => u._id == formData.get("receiverId"))
-                    ?.name || "",
-                purpose: formData.get("purpose"),
-                channel: "manual",
-              },
-            };
-            try {
-              await transactionAPI.createTransaction(data);
-              setShowCreateModal(false);
-              loadTransactions();
-            } catch (error) {
-              console.error(error);
-              alert("Error creating transaction");
-            }
-          }}
-          className="space-y-4"
-        >
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                From Currency
-              </label>
-
-              <select
-                name="fromCurrency"
-                required
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white border"
-              >
-                <option value="">select one</option>
-                <option value="USD">USD</option>
-                <option value="USDC">USDC</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                To Currency
-              </label>
-
-              <select
-                name="toCurrency"
-                required
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white border"
-              >
-                <option value="">select one</option>
-                <option value="USD">USD</option>
-                <option value="USDC">USDC</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Receiver
-              </label>
-
-              <select
-                name="receiverId"
-                required
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white border"
-              >
-                <option value="">select one</option>
-
-                {users
-                  .filter((i: any) => i._id != user.id)
-                  .map((u: any) => (
-                    <option value={u._id} key={u._id}>
-                      {u.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Amount
-              </label>
-              <input
-                name="amount"
-                type="number"
-                required
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
-                placeholder="Amount"
-              />
-            </div>
-          </div>
-
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Region
+              Receiver
+            </label>
+
+            <select
+              name="receiverId"
+              required
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white border"
+            >
+              <option value="">select one</option>
+
+              {users
+                .filter((i: any) => i._id != user.id)
+                .map((u: any, n) => (
+                  <option value={u._id} key={n}>
+                    {u.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Amount
             </label>
             <input
-              placeholder="Region..."
-              name="region"
+              name="amount"
+              type="number"
               required
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2 "
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+              placeholder="Amount"
             />
           </div>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Purpose
-            </label>
-            <textarea
-              placeholder="Purpose..."
-              rows={5}
-              name="purpose"
-              required
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2 "
-            ></textarea>
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Region
+          </label>
+          <input
+            placeholder="Region..."
+            name="region"
+            required
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2 "
+          />
+        </div>
 
-          <div className="text-right">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Submit
-            </button>
-          </div>
-        </form>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Purpose
+          </label>
+          <textarea
+            placeholder="Purpose..."
+            rows={5}
+            name="purpose"
+            required
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2 "
+          ></textarea>
+        </div>
+
+        <div className="text-right">
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Submit
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+function DeleteTransactionsModel({ action, setOpen }: any) {
+  return (
+    <Modal>
+      <div className="p-4">
+        <h1 className="text-xl text-center">
+          Did you want to delete This Transaction?
+        </h1>
+      </div>
+
+      <div className="flex justify-end gap-4 mt-2 pt-2 border-t">
+        <button
+          onClick={action}
+          className="text-red-700 bg-red-50 hover:bg-red-100 rounded px-4 py-1"
+        >
+          Yes
+        </button>
+        <button
+          onClick={() => setOpen(false)}
+          className="text-green-700 bg-green-50 hover:bg-green-100 rounded px-4 py-1  "
+        >
+          No
+        </button>
+      </div>
+    </Modal>
+  );
+}
+function Modal({ children }: any) {
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full z-50 grid place-content-center  !mt-0">
+      <div className="relative mx-auto  overflow-y-auto max-h-96 p-5 border min-w-44 max-w-full  shadow-lg rounded-lg bg-white">
+        {children}
       </div>
     </div>
   );
-};
+}

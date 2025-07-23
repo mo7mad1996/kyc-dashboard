@@ -227,9 +227,9 @@ export const DashboardPage: React.FC = () => {
             <div className="p-6">
               {recentTransactions.length > 0 ? (
                 <div className="space-y-4">
-                  {recentTransactions.map((transaction) => (
+                  {recentTransactions.map((transaction, n) => (
                     <div
-                      key={transaction.id}
+                      key={n}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                     >
                       <div className="flex items-center space-x-4">
@@ -345,9 +345,9 @@ export const DashboardPage: React.FC = () => {
               <div className="mt-3">
                 <p className="text-xs text-blue-700 font-medium mb-1">Permissions:</p>
                 <div className="flex flex-wrap gap-1">
-                  {user?.permissions.map((permission) => (
+                  {user?.permissions.map((permission, n) => (
                     <span
-                      key={permission}
+                      key={n}
                       className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800"
                     >
                       {permission}

@@ -54,6 +54,10 @@ export const transactionAPI = {
     const response = await api.post("/transactions", data);
     return response.data;
   },
+  deleteTransaction: async (id: string) => {
+    const response = await api.delete(`/transactions/${id}`);
+    return response.data;
+  },
   updateTransactionStatus: async (id: string, data: any) => {
     const response = await api.patch(`/transactions/${id}/status`, data);
     return response.data;

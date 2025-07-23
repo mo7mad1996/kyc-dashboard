@@ -386,12 +386,12 @@ export const AuditLogsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50">
+              {filteredLogs.map((log, n) => (
+                <tr key={n} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {/* <div>{format(new Date(log.timestamp), "MMM d, yyyy")}</div> */}
+                    <div>{format(new Date(log.createdAt), "MMM d, yyyy")}</div>
                     <div className="text-xs text-gray-500">
-                      {/* {format(new Date(log.timestamp), "HH:mm:ss")} */}
+                      {format(new Date(log.createdAt), "HH:mm:ss")}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
