@@ -1,69 +1,25 @@
-import { v4 as uuidv4 } from 'uuid';
-import { mockAuditLogs, AuditLog } from '../models/AuditLog.js';
+import { AuditLog } from "../models/AuditLog.js";
 
-export const logAuditEvent = (eventData: Omit<AuditLog, 'id' | 'timestamp'>) => {
-  const auditLog: AuditLog = {
-    id: uuidv4(),
-    timestamp: new Date(),
-    ...eventData
-  };
-
-  // In production, this would save to database
-  mockAuditLogs.unshift(auditLog);
-  
-  // Keep only last 1000 entries for demo
-  if (mockAuditLogs.length > 1000) {
-    mockAuditLogs.splice(1000);
-  }
-
-  console.log('📝 Audit Log:', auditLog);
-  return auditLog;
-};
-
-export const getAuditLogs = (filters: {
-  userId?: string;
-  action?: string;
-  resource?: string;
-  status?: string;
-  startDate?: Date;
-  endDate?: Date;
-  limit?: number;
-  offset?: number;
+export const logAuditEvent = async (eventData: {
+  userId: string;
+  userName: string;
+  userRole: string;
+  action: string;
+  resource: string;
+  resourceId?: string;
+  details: any;
+  ipAddress: string;
+  userAgent: string;
+  status: "success" | "failure" | "warning";
+  sessionId?: string;
 }) => {
-  let logs = [...mockAuditLogs];
+  try {
+    const auditLog = new AuditLog(eventData);
+    await auditLog.save();
 
-  // Apply filters
-  if (filters.userId) {
-    logs = logs.filter(log => log.userId === filters.userId);
+    return auditLog;
+  } catch (error) {
+    console.error("❌ Failed to log audit event:", error);
+    // Don't throw error to avoid breaking the main operation
   }
-  if (filters.action) {
-    logs = logs.filter(log => log.action.toLowerCase().includes(filters.action!.toLowerCase()));
-  }
-  if (filters.resource) {
-    logs = logs.filter(log => log.resource.toLowerCase().includes(filters.resource!.toLowerCase()));
-  }
-  if (filters.status) {
-    logs = logs.filter(log => log.status === filters.status);
-  }
-  if (filters.startDate) {
-    logs = logs.filter(log => log.timestamp >= filters.startDate!);
-  }
-  if (filters.endDate) {
-    logs = logs.filter(log => log.timestamp <= filters.endDate!);
-  }
-
-  // Sort by timestamp (newest first)
-  logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-  // Apply pagination
-  const offset = filters.offset || 0;
-  const limit = filters.limit || 50;
-  const paginatedLogs = logs.slice(offset, offset + limit);
-
-  return {
-    logs: paginatedLogs,
-    total: logs.length,
-    offset,
-    limit
-  };
 };

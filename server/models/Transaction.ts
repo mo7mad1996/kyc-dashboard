@@ -1,12 +1,14 @@
-export interface Transaction {
-  id: string;
+import mongoose, { Document, Schema } from "mongoose";
+
+export interface ITransaction extends Document {
+  _id: any;
   fromCurrency: string;
   toCurrency: string;
   amount: number;
   convertedAmount: number;
   exchangeRate: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
-  kycStatus: 'not_started' | 'pending' | 'approved' | 'rejected';
+  status: "pending" | "processing" | "completed" | "failed" | "cancelled";
+  kycStatus: "not_started" | "pending" | "approved" | "rejected";
   senderId: string;
   receiverId: string;
   region: string;
@@ -22,66 +24,107 @@ export interface Transaction {
     purpose: string;
     channel: string;
   };
+  createdBy: mongoose.Types.ObjectId;
+  completedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
-  completedAt?: Date;
 }
 
-// Mock transactions for demo
-export const mockTransactions: Transaction[] = [
+const TransactionSchema = new Schema<ITransaction>(
   {
-    id: 'txn_001',
-    fromCurrency: 'USD',
-    toCurrency: 'USDC',
-    amount: 1000,
-    convertedAmount: 1000,
-    exchangeRate: 1.0,
-    status: 'completed',
-    kycStatus: 'approved',
-    senderId: 'sender_001',
-    receiverId: 'receiver_001',
-    region: 'west_africa',
-    partnerId: '3',
+    fromCurrency: {
+      type: String,
+      required: true,
+      uppercase: true,
+      index: true,
+    },
+    toCurrency: {
+      type: String,
+      required: true,
+      uppercase: true,
+      index: true,
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    convertedAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    exchangeRate: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ["pending", "processing", "completed", "failed", "cancelled"],
+      default: "pending",
+      index: true,
+    },
+    kycStatus: {
+      type: String,
+      required: true,
+      enum: ["not_started", "pending", "approved", "rejected"],
+      default: "not_started",
+      index: true,
+    },
+    senderId: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    receiverId: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    region: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    partnerId: {
+      type: String,
+      index: true,
+    },
     fees: {
-      platform: 10,
-      exchange: 5,
-      total: 15
+      platform: { type: Number, required: true, min: 0 },
+      exchange: { type: Number, required: true, min: 0 },
+      total: { type: Number, required: true, min: 0 },
     },
     metadata: {
-      senderName: 'John Smith',
-      receiverName: 'Amara Kone',
-      purpose: 'Family Support',
-      channel: 'mobile'
+      senderName: { type: String, required: true, trim: true },
+      receiverName: { type: String, required: true, trim: true },
+      purpose: { type: String, required: true, trim: true },
+      channel: { type: String, required: true, trim: true },
     },
-    createdAt: new Date(Date.now() - 3600000),
-    updatedAt: new Date(Date.now() - 1800000),
-    completedAt: new Date(Date.now() - 1800000)
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    completedAt: {
+      type: Date,
+    },
   },
   {
-    id: 'txn_002',
-    fromCurrency: 'USD',
-    toCurrency: 'USDC',
-    amount: 500,
-    convertedAmount: 500,
-    exchangeRate: 1.0,
-    status: 'processing',
-    kycStatus: 'pending',
-    senderId: 'sender_002',
-    receiverId: 'receiver_002',
-    region: 'west_africa',
-    partnerId: '3',
-    fees: {
-      platform: 5,
-      exchange: 2.5,
-      total: 7.5
-    },
-    metadata: {
-      senderName: 'Sarah Johnson',
-      receiverName: 'Ibrahim Diallo',
-      purpose: 'Education',
-      channel: 'web'
-    },
-    createdAt: new Date(Date.now() - 1800000),
-    updatedAt: new Date(Date.now() - 900000)
+    timestamps: true,
   }
-];
+);
+
+// Compound indexes for performance
+TransactionSchema.index({ status: 1, createdAt: -1 });
+TransactionSchema.index({ region: 1, status: 1 });
+TransactionSchema.index({ partnerId: 1, status: 1 });
+TransactionSchema.index({ createdBy: 1, createdAt: -1 });
+
+export const Transaction = mongoose.model<ITransaction>(
+  "Transaction",
+  TransactionSchema
+);

@@ -1,19 +1,18 @@
-import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  ArrowRightLeft, 
-  FileText, 
-  Settings, 
-  User, 
+import React, { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  ArrowRightLeft,
+  FileText,
+  User,
   LogOut,
   Menu,
   X,
   Shield,
-  ChevronDown
-} from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { clsx } from 'clsx';
+  ChevronDown,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { clsx } from "clsx";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -26,46 +25,66 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Transactions', href: '/transactions', icon: ArrowRightLeft },
-    { name: 'Audit Logs', href: '/audit', icon: FileText },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Transactions", href: "/transactions", icon: ArrowRightLeft },
+    { name: "Audit Logs", href: "/audit", icon: FileText },
   ];
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'global_admin': return 'bg-purple-100 text-purple-800';
-      case 'regional_admin': return 'bg-blue-100 text-blue-800';
-      case 'sending_partner': return 'bg-green-100 text-green-800';
-      case 'receiving_partner': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "global_admin":
+        return "bg-purple-100 text-purple-800";
+      case "regional_admin":
+        return "bg-blue-100 text-blue-800";
+      case "sending_partner":
+        return "bg-green-100 text-green-800";
+      case "receiving_partner":
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'global_admin': return 'Global Admin';
-      case 'regional_admin': return 'Regional Admin';
-      case 'sending_partner': return 'Sending Partner';
-      case 'receiving_partner': return 'Receiving Partner';
-      default: return role;
+      case "global_admin":
+        return "Global Admin";
+      case "regional_admin":
+        return "Regional Admin";
+      case "sending_partner":
+        return "Sending Partner";
+      case "receiving_partner":
+        return "Receiving Partner";
+      default:
+        return role;
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
-      <div className={clsx(
-        'fixed inset-0 z-50 lg:hidden',
-        sidebarOpen ? 'block' : 'hidden'
-      )}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+      <div
+        className={clsx(
+          "fixed inset-0 z-50 lg:hidden",
+          sidebarOpen ? "block" : "hidden"
+        )}
+      >
+        <div
+          className="fixed inset-0 bg-gray-600 bg-opacity-75"
+          onClick={() => setSidebarOpen(false)}
+        />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
             <div className="flex items-center space-x-2">
               <Shield className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">KYC Dashboard</span>
+              <span className="text-xl font-bold text-gray-900">
+                KYC Dashboard
+              </span>
             </div>
-            <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-gray-600">
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
               <X className="h-6 w-6" />
             </button>
           </div>
@@ -78,10 +97,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   key={item.name}
                   to={item.href}
                   className={clsx(
-                    'flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     isActive
-                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   )}
                   onClick={() => setSidebarOpen(false)}
                 >
@@ -99,7 +118,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="flex flex-col flex-grow pt-5 bg-white border-r border-gray-200">
           <div className="flex items-center px-4 mb-8">
             <Shield className="h-8 w-8 text-blue-600" />
-            <span className="ml-2 text-xl font-bold text-gray-900">KYC Dashboard</span>
+            <span className="ml-2 text-xl font-bold text-gray-900">
+              KYC Dashboard
+            </span>
           </div>
           <nav className="flex-1 px-4 space-y-2">
             {navigation.map((item) => {
@@ -110,10 +131,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   key={item.name}
                   to={item.href}
                   className={clsx(
-                    'flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     isActive
-                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   )}
                 >
                   <Icon className="mr-3 h-5 w-5" />
@@ -133,11 +154,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {user?.name}
                 </p>
-                <span className={clsx(
-                  'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                  getRoleColor(user?.role || '')
-                )}>
-                  {getRoleLabel(user?.role || '')}
+                <span
+                  className={clsx(
+                    "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                    getRoleColor(user?.role || "")
+                  )}
+                >
+                  {getRoleLabel(user?.role || "")}
                 </span>
               </div>
             </div>
@@ -155,14 +178,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           >
             <Menu className="h-6 w-6" />
           </button>
-          
+
           <div className="flex-1 flex justify-between px-4 lg:px-6">
             <div className="flex-1 flex items-center">
               <h1 className="text-lg font-semibold text-gray-900">
-                {navigation.find(item => item.href === location.pathname)?.name || 'Dashboard'}
+                {navigation.find((item) => item.href === location.pathname)
+                  ?.name || "Dashboard"}
               </h1>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <button
@@ -174,11 +198,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </div>
                   <ChevronDown className="w-4 h-4 text-gray-400" />
                 </button>
-                
+
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                     <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {user?.name}
+                      </p>
                       <p className="text-xs text-gray-500">{user?.email}</p>
                     </div>
                     <button
@@ -210,7 +236,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Click outside to close user menu */}
       {userMenuOpen && (
-        <div className="fixed inset-0 z-30" onClick={() => setUserMenuOpen(false)} />
+        <div
+          className="fixed inset-0 z-30"
+          onClick={() => setUserMenuOpen(false)}
+        />
       )}
     </div>
   );

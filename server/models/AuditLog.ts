@@ -1,5 +1,7 @@
-export interface AuditLog {
-  id: string;
+import mongoose, { Document, Schema } from "mongoose";
+
+export interface IAuditLog extends Document {
+  _id: any;
   userId: string;
   userName: string;
   userRole: string;
@@ -9,52 +11,74 @@ export interface AuditLog {
   details: any;
   ipAddress: string;
   userAgent: string;
-  status: 'success' | 'failure' | 'warning';
-  timestamp: Date;
+  status: "success" | "failure" | "warning";
   sessionId?: string;
+  createdAt: Date;
 }
 
-// Mock audit logs for demo
-export const mockAuditLogs: AuditLog[] = [
+const AuditLogSchema = new Schema<IAuditLog>(
   {
-    id: 'audit_001',
-    userId: '1',
-    userName: 'Global Administrator',
-    userRole: 'global_admin',
-    action: 'login',
-    resource: 'authentication',
-    details: { method: 'email_password' },
-    ipAddress: '192.168.1.100',
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    status: 'success',
-    timestamp: new Date(Date.now() - 3600000)
+    userId: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    userName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    userRole: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    action: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    resource: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    resourceId: {
+      type: String,
+      index: true,
+    },
+    details: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
+    ipAddress: {
+      type: String,
+      required: true,
+    },
+    userAgent: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ["success", "failure", "warning"],
+      index: true,
+    },
+    sessionId: {
+      type: String,
+      index: true,
+    },
   },
   {
-    id: 'audit_002',
-    userId: '2',
-    userName: 'Regional Admin - West Africa',
-    userRole: 'regional_admin',
-    action: 'view_transaction',
-    resource: 'transaction',
-    resourceId: 'txn_001',
-    details: { transactionAmount: 1000, currency: 'USD' },
-    ipAddress: '192.168.1.101',
-    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-    status: 'success',
-    timestamp: new Date(Date.now() - 1800000)
-  },
-  {
-    id: 'audit_003',
-    userId: '3',
-    userName: 'Sending Partner - MoneyGram',
-    userRole: 'sending_partner',
-    action: 'create_transaction',
-    resource: 'transaction',
-    resourceId: 'txn_002',
-    details: { amount: 500, fromCurrency: 'USD', toCurrency: 'USDC' },
-    ipAddress: '192.168.1.102',
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
-    status: 'success',
-    timestamp: new Date(Date.now() - 900000)
+    timestamps: { createdAt: true, updatedAt: false },
   }
-];
+);
+
+// Compound indexes for performance
+AuditLogSchema.index({ userId: 1, createdAt: -1 });
+AuditLogSchema.index({ action: 1, status: 1, createdAt: -1 });
+AuditLogSchema.index({ resource: 1, createdAt: -1 });
+AuditLogSchema.index({ createdAt: -1 });
+
+export const AuditLog = mongoose.model<IAuditLog>("AuditLog", AuditLogSchema);

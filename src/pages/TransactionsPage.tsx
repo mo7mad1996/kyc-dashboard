@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Search,
-  Filter,
+  ArrowRightLeft,
   Download,
   Plus,
   Eye,
@@ -9,7 +9,6 @@ import {
   Clock,
   RefreshCw,
   XCircle,
-  ArrowRightLeft,
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
@@ -20,6 +19,7 @@ import { format } from "date-fns";
 
 interface Transaction {
   id: string;
+  _id: string;
   fromCurrency: string;
   toCurrency: string;
   amount: number;
@@ -153,6 +153,43 @@ export const TransactionsPage: React.FC = () => {
     }
   };
 
+  const exportTransactions = async (string_format: string = "csv") => {
+    try {
+      const params = new URLSearchParams();
+      if (statusFilter) params.append("status", statusFilter);
+      if (kycFilter) params.append("kycStatus", kycFilter);
+
+      const response = await fetch(
+        `/api/transactions/export/${string_format}?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Export failed");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `transactions-${string_format}-${format(
+        new Date(),
+        "yyyy-MM-dd"
+      )}.${string_format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Export failed. Please try again.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -180,9 +217,19 @@ export const TransactionsPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          <button
+            onClick={() => exportTransactions("csv")}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
             <Download className="h-4 w-4" />
-            <span>Export</span>
+            <span>Export CSV</span>
+          </button>
+          <button
+            onClick={() => exportTransactions("json")}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            <span>Export JSON</span>
           </button>
           {user?.permissions.includes("write") && (
             <button
@@ -195,7 +242,6 @@ export const TransactionsPage: React.FC = () => {
           )}
         </div>
       </div>
-
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -244,7 +290,6 @@ export const TransactionsPage: React.FC = () => {
           </button>
         </div>
       </div>
-
       {/* Transactions Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
@@ -367,10 +412,9 @@ export const TransactionsPage: React.FC = () => {
           </div>
         )}
       </div>
-
       {/* Transaction Detail Modal */}
       {selectedTransaction && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto  h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-lg bg-white">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -563,6 +607,189 @@ export const TransactionsPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/*  Add a new Transaction Detail Modal */}
+      {showCreateModal && (
+        <TransactionsModel {...{ loadTransactions, setShowCreateModal }} />
+      )}
+    </div>
+  );
+};
+
+const TransactionsModel = ({ setShowCreateModal, loadTransactions }: any) => {
+  const { user, getUsers }: any = useAuth();
+
+  const [users, setUsers] = useState<any[]>([]);
+  const getData = async () => {
+    try {
+      const res: any = await getUsers();
+
+      setUsers(res);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    getData();
+  }, []);
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50  !mt-0">
+      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-lg bg-white">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Create New Transaction
+          </h3>
+          <button
+            onClick={() => setShowCreateModal(false)}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <XCircle className="h-6 w-6" />
+          </button>
+        </div>
+
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget as HTMLFormElement);
+            const data = {
+              // fromCurrency,
+              fromCurrency: formData.get("fromCurrency"),
+              // toCurrency,
+              toCurrency: formData.get("toCurrency"),
+              // amount,
+              amount: Number(formData.get("amount")),
+              // senderId,
+              senderId: user?.id,
+              // receiverId,
+              receiverId: formData.get("receiverId"),
+              // region
+              region: formData.get("region"),
+              // metadata,
+              metadata: {
+                senderName: user?.name,
+                receiverName:
+                  users.find((u: any) => u._id == formData.get("receiverId"))
+                    ?.name || "",
+                purpose: formData.get("purpose"),
+                channel: "manual",
+              },
+            };
+            try {
+              await transactionAPI.createTransaction(data);
+              setShowCreateModal(false);
+              loadTransactions();
+            } catch (error) {
+              console.error(error);
+              alert("Error creating transaction");
+            }
+          }}
+          className="space-y-4"
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                From Currency
+              </label>
+
+              <select
+                name="fromCurrency"
+                required
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white border"
+              >
+                <option value="">select one</option>
+                <option value="USD">USD</option>
+                <option value="USDC">USDC</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                To Currency
+              </label>
+
+              <select
+                name="toCurrency"
+                required
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white border"
+              >
+                <option value="">select one</option>
+                <option value="USD">USD</option>
+                <option value="USDC">USDC</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Receiver
+              </label>
+
+              <select
+                name="receiverId"
+                required
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 bg-white border"
+              >
+                <option value="">select one</option>
+
+                {users
+                  .filter((i: any) => i._id != user.id)
+                  .map((u: any) => (
+                    <option value={u._id} key={u._id}>
+                      {u.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Amount
+              </label>
+              <input
+                name="amount"
+                type="number"
+                required
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border"
+                placeholder="Amount"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Region
+            </label>
+            <input
+              placeholder="Region..."
+              name="region"
+              required
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2 "
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Purpose
+            </label>
+            <textarea
+              placeholder="Purpose..."
+              rows={5}
+              name="purpose"
+              required
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2 "
+            ></textarea>
+          </div>
+
+          <div className="text-right">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Submit
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

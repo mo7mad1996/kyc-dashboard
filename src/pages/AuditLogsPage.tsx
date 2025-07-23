@@ -76,7 +76,7 @@ export const AuditLogsPage: React.FC = () => {
 
   const filteredLogs = auditLogs.filter(
     (log) =>
-      log.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.resource.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.ipAddress.includes(searchTerm)
@@ -120,37 +120,44 @@ export const AuditLogsPage: React.FC = () => {
     return "bg-purple-100 text-purple-800";
   };
 
-  const exportLogs = () => {
-    const csvContent = [
-      [
-        "Timestamp",
-        "User",
-        "Role",
-        "Action",
-        "Resource",
-        "Status",
-        "IP Address",
-      ].join(","),
-      ...filteredLogs.map((log) =>
-        [
-          format(new Date(log.timestamp), "yyyy-MM-dd HH:mm:ss"),
-          log.userName,
-          log.userRole,
-          log.action,
-          log.resource,
-          log.status,
-          log.ipAddress,
-        ].join(",")
-      ),
-    ].join("\n");
+  const exportLogs: any = async (string_format: string = "csv") => {
+    try {
+      const params = new URLSearchParams();
+      if (actionFilter) params.append("action", actionFilter);
+      if (statusFilter) params.append("status", statusFilter);
+      if (resourceFilter) params.append("resource", resourceFilter);
+      if (dateRange.startDate) params.append("startDate", dateRange.startDate);
+      if (dateRange.endDate) params.append("endDate", dateRange.endDate);
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `audit-logs-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+      const response = await fetch(
+        `/api/audit/export/${string_format}?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Export failed");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `audit-logs-${string_format}-${format(
+        new Date(),
+        "yyyy-MM-dd"
+      )}.${string_format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Export failed. Please try again.");
+    }
   };
 
   if (loading) {
@@ -194,6 +201,13 @@ export const AuditLogsPage: React.FC = () => {
           >
             <Download className="h-4 w-4" />
             <span>Export CSV</span>
+          </button>
+          <button
+            onClick={() => exportLogs("json")}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            <span>Export JSON</span>
           </button>
           <button
             onClick={loadAuditLogs}
@@ -375,9 +389,9 @@ export const AuditLogsPage: React.FC = () => {
               {filteredLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div>{format(new Date(log.timestamp), "MMM d, yyyy")}</div>
+                    {/* <div>{format(new Date(log.timestamp), "MMM d, yyyy")}</div> */}
                     <div className="text-xs text-gray-500">
-                      {format(new Date(log.timestamp), "HH:mm:ss")}
+                      {/* {format(new Date(log.timestamp), "HH:mm:ss")} */}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
