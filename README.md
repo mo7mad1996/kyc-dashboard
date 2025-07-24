@@ -1,8 +1,8 @@
 # Multi-Region KYC Dashboard
 
-**Author:** Mohammed Ibrahim
-**Phone:** 01063525389
-**Email:** [mo7mad369@gmail.com](mailto:mo7mad369@gmail.com)
+### **Author:** Mohammed Ibrahim
+### **Phone:** 01063525389
+### **Email:** [mo7mad369@gmail.com](mailto:mo7mad369@gmail.com)
 
 A comprehensive fintech dashboard for managing KYC (Know Your Customer) operations across multiple regions with real-time audit logging and role-based access control.
 
